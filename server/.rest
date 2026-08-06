@@ -1,0 +1,6 @@
+### signUp
+
+Post http://localhost:5000/auth/signup
+Content-Type: application/json
+
+{ "phone":"09348757505", "firstName":"orion", "lastName":"kibret", "age":24, "password":"Naol@1234", "region":"Addis abeba","referby":"EFF04BE8" }

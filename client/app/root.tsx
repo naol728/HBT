@@ -6,9 +6,50 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-
+import { Toaster } from 'sonner'
 import type { Route } from "./+types/root";
+import { TooltipProvider } from "@/components/ui/tooltip"
 import "./app.css";
+// import "./index.css";
+import { Provider } from "react-redux";
+import { store } from "./store/store";
+import { useLoaderData } from "react-router";
+import { useEffect } from "react";
+import ReferralHandler from "./ReferralHandler";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/query-client";
+import { useAppDispatch } from "./store/hook";
+import { getMe } from "./store/slices/authSlice";
+import AuthInitializer from "@/components/AuthInitializer";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+
+  const ref = url.searchParams.get("ref");
+
+
+  // Pages that do not need referral
+  const publicRoutes = [
+    "/404",
+  ];
+
+
+  if (!publicRoutes.includes(pathname)) {
+
+    if (!ref) {
+      throw new Response("Referral code required", {
+        status: 404,
+      });
+    }
+
+  }
+
+
+  return {
+    referralCode: ref,
+  };
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -29,14 +70,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="color-scheme" content="dark" />
-        <meta name="theme-color" content="#000000" />
-        <meta name="msapplication-TileColor" content="#000000" />
         <Meta />
         <Links />
       </head>
+
       <body>
-        {children}
+        <Provider store={store}>
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              {children}
+              <Toaster position="top-right" />
+            </TooltipProvider>
+          </QueryClientProvider>
+        </Provider>
+
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -44,8 +91,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+
 export default function App() {
-  return <Outlet />;
+  return (
+    <>
+      <ReferralHandler />
+      <AuthInitializer />
+    </>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

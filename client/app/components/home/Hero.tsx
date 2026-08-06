@@ -5,7 +5,7 @@ export default function Hero() {
   return (
     <section className="hero" id="opportunity">
       <div className="hero-bg"></div>
-      <div className="container">
+      <div className="container flex item-center justify-center">
         <div className="hero-content">
           <div className="hero-badge">
             <span>Powered by TalentBridge Ethiopia</span>
