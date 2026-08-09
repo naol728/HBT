@@ -1,15 +1,19 @@
 import ReferralLink from "@/components/ReferralLink";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
         setLoading(true);
 
         setTimeout(() => {
@@ -19,99 +23,45 @@ export default function Login() {
     };
 
     return (
-        <div className="auth-page">
+        <div className="min-h-screen flex overflow-hidden">
             {/* LEFT PANEL */}
-            <div className="auth-left">
-                <div className="auth-left-bg"></div>
+            <div className="flex-1 relative flex flex-col justify-end p-14 min-h-screen">
+                <div className="absolute inset-0 z-0 bg-[url('/logo.jpg')] bg-cover bg-center">
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent" />
+                </div>
 
-                <div className="auth-left-content">
-                    <span className="section-label">
+                <div className="relative z-10 max-w-lg">
+                    <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
                         Powered by TalentBridge Ethiopia
                     </span>
 
-                    <h2>
-                        Your Team is <span className="rose">Growing</span> Without You
+                    <h2 className="text-3xl font-bold mt-2 text-foreground">
+                        Your Team is <span className="text-primary">Growing</span> Without You
                     </h2>
 
-                    <p>
+                    <p className="text-muted-foreground text-sm mt-3 leading-relaxed">
                         Sign in to check your commissions, track your team's sales, and
                         collect your earnings — all from one place.
                     </p>
 
-                    <div
-                        style={{
-                            display: "flex",
-                            gap: 32,
-                            marginTop: 40,
-                            paddingTop: 32,
-                            borderTop: "1px solid rgba(255,255,255,0.1)",
-                        }}
-                    >
+                    <div className="flex gap-8 mt-10 pt-8 border-t border-border/50">
                         <div>
-                            <div
-                                style={{
-                                    fontSize: "1.6rem",
-                                    fontWeight: 700,
-                                    color: "var(--gold)",
-                                }}
-                            >
-                                3,200+
-                            </div>
-
-                            <div
-                                style={{
-                                    fontSize: "0.72rem",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.1em",
-                                    color: "var(--text-muted)",
-                                }}
-                            >
+                            <div className="text-2xl font-bold text-primary">3,200+</div>
+                            <div className="text-xs uppercase tracking-wider text-muted-foreground">
                                 Active Distributors
                             </div>
                         </div>
 
                         <div>
-                            <div
-                                style={{
-                                    fontSize: "1.6rem",
-                                    fontWeight: 700,
-                                    color: "var(--gold)",
-                                }}
-                            >
-                                Birr 2M+
-                            </div>
-
-                            <div
-                                style={{
-                                    fontSize: "0.72rem",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.1em",
-                                    color: "var(--text-muted)",
-                                }}
-                            >
+                            <div className="text-2xl font-bold text-primary">Birr 2M+</div>
+                            <div className="text-xs uppercase tracking-wider text-muted-foreground">
                                 Commissions Paid
                             </div>
                         </div>
 
                         <div>
-                            <div
-                                style={{
-                                    fontSize: "1.6rem",
-                                    fontWeight: 700,
-                                    color: "var(--gold)",
-                                }}
-                            >
-                                98%
-                            </div>
-
-                            <div
-                                style={{
-                                    fontSize: "0.72rem",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.1em",
-                                    color: "var(--text-muted)",
-                                }}
-                            >
+                            <div className="text-2xl font-bold text-primary">98%</div>
+                            <div className="text-xs uppercase tracking-wider text-muted-foreground">
                                 Payout Rate
                             </div>
                         </div>
@@ -120,92 +70,77 @@ export default function Login() {
             </div>
 
             {/* RIGHT PANEL */}
-            <div className="auth-right">
-                <Link to="/" className="auth-logo">
+            <div className="w-[480px] min-h-screen bg-card flex flex-col justify-center p-14 overflow-y-auto">
+                <ReferralLink to="/" className="flex items-center gap-2.5 mb-10">
                     <img
-                        src="/assets/images/talentbridge-logo.jpg"
+                        src="/logo.jpg"
                         alt="TalentBridge Ethiopia"
-                        style={{
-                            height: 38,
-                            width: "auto",
-                            borderRadius: 4,
-                        }}
+                        className="h-[38px] w-auto rounded"
                     />
-
-                    <div className="auth-logo-text" style={{ fontSize: "1rem" }}>
-                        HBT<span> · TalentBridge</span>
+                    <div className="text-base font-bold text-foreground">
+                        HBT<span className="text-primary"> · TalentBridge</span>
                     </div>
-                </Link>
+                </ReferralLink>
 
-                <h2 className="auth-title">Sign In</h2>
-
-                <p className="auth-subtitle">
-                    Access your distributor dashboard
+                <h2 className="text-2xl font-bold mb-1.5 text-foreground">Sign In</h2>
+                <p className="text-sm text-muted-foreground mb-8">
+                    Access your dashboard
                 </p>
 
                 <form onSubmit={handleSubmit} noValidate>
-                    <div className="form-group">
-                        <label className="form-label" htmlFor="email">
-                            Email Address or Phone
-                        </label>
-
-                        <div className="input-icon">
-                            <span className="icon">✉</span>
-
-                            <input
-                                id="email"
-                                type="email"
-                                className="form-control"
-                                placeholder="you@example.com"
+                    <div className="mb-4">
+                        <Label htmlFor="tel" className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                            Phone
+                        </Label>
+                        <div className="relative mt-2">
+                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+                            <Input
+                                id="tel"
+                                type="tel"
+                                placeholder="2519--------"
                                 required
+                                className="pl-10 bg-background/50 border-border text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-primary/20"
                             />
                         </div>
                     </div>
 
-                    <div className="form-group">
-                        <label className="form-label" htmlFor="password">
+                    <div className="mb-4">
+                        <Label htmlFor="password" className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                             Password
-                        </label>
-
-                        <div className="input-icon has-toggle">
-                            <span className="icon">🔒</span>
-
-                            <input
+                        </Label>
+                        <div className="relative mt-2">
+                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+                            <Input
                                 id="password"
-                                type="password"
-                                className="form-control"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="Enter your password"
                                 required
+                                className="pl-10 pr-11 bg-background/50 border-border text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-primary/20"
                             />
-
                             <button
                                 type="button"
-                                className="password-toggle"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
                             >
-                                👁
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
                         </div>
                     </div>
 
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginBottom: 24,
-                        }}
-                    >
-                        <div className="form-check">
-                            <input type="checkbox" id="remember" />
-                            <label htmlFor="remember">Remember me</label>
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-2.5">
+                            <Checkbox
+                                id="remember"
+                                className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            />
+                            <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
+                                Remember me
+                            </Label>
                         </div>
 
                         <Link
                             to="/forgot-password"
-                            style={{
-                                fontSize: ".82rem",
-                                color: "var(--gold)",
-                            }}
+                            className="text-sm text-primary hover:text-primary/80 transition-colors"
                         >
                             Forgot password?
                         </Link>
@@ -213,51 +148,35 @@ export default function Login() {
 
                     <Button
                         type="submit"
-                        className="btn btn-rose btn-full btn-lg"
+                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-11"
                         disabled={loading}
                     >
                         {loading ? "Signing in..." : "Sign In to Dashboard"}
                     </Button>
                 </form>
 
-                <div className="auth-switch">
+                <div className="text-center mt-6 text-sm text-muted-foreground">
                     Don't have an account?{" "}
-                    <ReferralLink to="/signup">Join for free</ReferralLink>
+                    <ReferralLink to="/signup" className="text-primary font-semibold hover:text-primary/80">
+                        Join for free
+                    </ReferralLink>
                 </div>
 
-                <p
-                    style={{
-                        fontSize: ".72rem",
-                        color: "var(--text-muted)",
-                        marginTop: 32,
-                        lineHeight: 1.6,
-                        textAlign: "center",
-                    }}
-                >
+                <p className="text-xs text-muted-foreground/70 mt-8 leading-relaxed text-center">
                     By signing in you agree to our{" "}
-                    <Link to="/terms" style={{ color: "var(--gold)" }}>
+                    <Link to="/terms" className="text-primary hover:text-primary/80">
                         Terms of Service
                     </Link>{" "}
                     and{" "}
-                    <Link to="/privacy" style={{ color: "var(--gold)" }}>
+                    <Link to="/privacy" className="text-primary hover:text-primary/80">
                         Privacy Policy
                     </Link>
                     .
                 </p>
 
-                <p
-                    style={{
-                        fontSize: ".68rem",
-                        color: "var(--text-muted)",
-                        marginTop: 16,
-                        textAlign: "center",
-                        opacity: 0.6,
-                    }}
-                >
+                <p className="text-[0.65rem] text-muted-foreground/50 mt-4 text-center">
                     HBT — Hustlers Business Team · Powered by{" "}
-                    <strong style={{ color: "var(--gold)" }}>
-                        TalentBridge Ethiopia
-                    </strong>
+                    <strong className="text-primary">TalentBridge Ethiopia</strong>
                 </p>
             </div>
         </div>
