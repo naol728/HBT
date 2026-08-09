@@ -178,20 +178,7 @@ export const signIn = async (req: Request, res: Response) => {
     // Find user
     const { data: user, error } = await supabase
       .from("users")
-      .select(
-        `
-        id,
-        phone,
-        first_name,
-        last_name,
-        age,
-        region,
-        referral_code,
-        total_referrals,
-        password_hash,
-        created_at
-      `,
-      )
+      .select("*")
       .eq("phone", phone)
       .maybeSingle();
 

@@ -14,5 +14,5 @@ export const signUp = async (data: {
 };
 
 export const signIn = async (data: { phone: string; password: string }) => {
-  return handleApiResponse(() => apiClient.post("/auth/signin", data));
+return handleApiResponse(() => apiClient.post("/auth/signin", data));
 };

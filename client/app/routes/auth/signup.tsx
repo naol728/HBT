@@ -99,7 +99,7 @@ export default function Signup() {
 
         onError: (error: any) => {
             toast.error(
-                error?.response?.data?.message ??
+                error?.message ??
                 "Registration failed."
             );
         },
@@ -109,8 +109,8 @@ export default function Signup() {
             return (
                 form.firstName.trim() &&
                 form.lastName.trim() &&
-                form.phone.trim() &&
-                form.region.trim() // Added trim() to check if region is selected
+                /^[0-9]{9}$/.test(form.phone) &&
+                form.region.trim()
             );
         }
         if (step === 2) {
@@ -125,9 +125,28 @@ export default function Signup() {
         return false;
     };
 
+    const getStepValidationError = () => {
+        if (step === 1) {
+            if (!form.firstName.trim()) return "First name is required.";
+            if (!form.lastName.trim()) return "Last name is required.";
+            if (!form.phone.trim()) return "Phone number is required.";
+            if (!/^[0-9]{9}$/.test(form.phone)) return "Phone number must be exactly 9 digits.";
+            if (!form.region.trim()) return "Please select your region.";
+        }
+        if (step === 2) {
+            if (form.password.length < 8) return "Password must be at least 8 characters.";
+            if (form.password !== form.passwordConfirm) return "Passwords do not match.";
+        }
+        if (step === 3) {
+            if (!form.terms) return "Please accept the Terms of Service.";
+            if (!form.age) return "You must confirm that you are at least 18 years old.";
+        }
+        return "Please complete all required fields.";
+    };
+
     const nextStep = () => {
         if (!validateStep()) {
-            toast.error(" ⚠️ Please complete all required fields");
+            toast.error(getStepValidationError());
             return;
         }
         setStep((prev) => Math.min(prev + 1, 3));
@@ -153,9 +172,14 @@ export default function Signup() {
     const updateField = (field: keyof typeof form) => (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
     ) => {
-        const value = e.target.type === "checkbox"
+        const rawValue = e.target.type === "checkbox"
             ? (e.target as HTMLInputElement).checked
             : e.target.value;
+
+        const value = field === "phone"
+            ? String(rawValue).replace(/[^0-9]/g, "").slice(0, 9)
+            : rawValue;
+
         setForm((prev) => ({ ...prev, [field]: value }));
     };
 
@@ -242,12 +266,12 @@ export default function Signup() {
                                 <Input
                                     className="flex-1 rounded-l-none"
                                     type="tel"
-                                    placeholder="912345678"
+                                    placeholder="987654321"
                                     value={form.phone}
                                     onChange={updateField("phone")}
                                 />
                             </div>
-                            <p className="text-xs text-muted-foreground">Enter your phone number without the country code.</p>
+                            <p className="text-xs text-muted-foreground">Enter your 9-digit phone number without the country code, e.g. 987654321.</p>
                         </div>
 
                         <div className="space-y-2">

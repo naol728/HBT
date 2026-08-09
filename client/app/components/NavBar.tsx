@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import ReferralLink from "@/components/ReferralLink";
+import { useAppSelector } from "@/store/hook";
 
 const navItems = [
     {
@@ -32,6 +33,13 @@ export default function NavBar() {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
 
+    const { isAuthenticated } = useAppSelector(
+        (state) => state.auth
+    );
+
+    /* =========================================
+       SCROLL
+    ========================================= */
     useEffect(() => {
         const handleScroll = () => {
             setScrolled(window.scrollY > 50);
@@ -44,7 +52,9 @@ export default function NavBar() {
         };
     }, []);
 
-    // Close mobile menu when resizing to desktop
+    /* =========================================
+       CLOSE MOBILE MENU ON DESKTOP
+    ========================================= */
     useEffect(() => {
         const handleResize = () => {
             if (window.innerWidth >= 1024) {
@@ -66,7 +76,8 @@ export default function NavBar() {
     return (
         <header
             className={`
-                fixed inset-x-0 top-0 z-50 transition-all duration-300
+                fixed inset-x-0 top-0 z-50
+                transition-all duration-300
                 ${scrolled
                     ? "border-b border-border bg-background/95 shadow-sm backdrop-blur-xl"
                     : "bg-background/80 backdrop-blur-md"
@@ -75,8 +86,9 @@ export default function NavBar() {
         >
             <nav className="mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10">
                 <div className="flex h-[80px] items-center justify-between">
+
                     {/* =========================================
-                        LOGO - LARGER
+                        LOGO
                     ========================================= */}
                     <ReferralLink
                         to="/"
@@ -99,7 +111,7 @@ export default function NavBar() {
                     </ReferralLink>
 
                     {/* =========================================
-                        DESKTOP NAVIGATION - LARGER
+                        DESKTOP NAVIGATION
                     ========================================= */}
                     <div className="hidden lg:flex lg:items-center lg:gap-2">
                         {navItems.map((item, index) => (
@@ -108,7 +120,10 @@ export default function NavBar() {
                                 href={item.href}
                                 onClick={closeMenu}
                                 className={`
-                                    relative rounded-md px-5 py-2.5 text-base font-medium transition-colors
+                                    relative rounded-md
+                                    px-5 py-2.5
+                                    text-base font-medium
+                                    transition-colors
                                     ${index === 0
                                         ? "text-primary"
                                         : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -117,7 +132,6 @@ export default function NavBar() {
                             >
                                 {item.label}
 
-                                {/* Active indicator */}
                                 {index === 0 && (
                                     <span className="absolute inset-x-5 -bottom-1 h-0.5 rounded-full bg-primary" />
                                 )}
@@ -126,36 +140,53 @@ export default function NavBar() {
                     </div>
 
                     {/* =========================================
-                        DESKTOP ACTIONS - LARGER
+                        DESKTOP ACTIONS
                     ========================================= */}
                     <div className="hidden items-center gap-3 lg:flex">
-                        <ReferralLink to="/login">
-                            <Button
-                                variant="outline"
-                                size="default"
-                                className="px-6 py-2.5 text-base"
-                            >
-                                Sign In
-                            </Button>
-                        </ReferralLink>
 
-                        <ReferralLink to="/signup">
-                            <Button
-                                size="default"
-                                className="px-7 py-2.5 text-base"
-                            >
-                                Join Now
-                            </Button>
-                        </ReferralLink>
+                        {isAuthenticated ? (
+                            /* AUTHENTICATED */
+                            <ReferralLink to="/dashboard">
+                                <Button
+                                    size="default"
+                                    className="px-7 py-2.5 text-base"
+                                >
+                                    Dashboard
+                                </Button>
+                            </ReferralLink>
+                        ) : (
+                            /* NOT AUTHENTICATED */
+                            <>
+                                <ReferralLink to="/login">
+                                    <Button
+                                        variant="outline"
+                                        size="default"
+                                        className="px-6 py-2.5 text-base"
+                                    >
+                                        Sign In
+                                    </Button>
+                                </ReferralLink>
+
+                                <ReferralLink to="/signup">
+                                    <Button
+                                        size="default"
+                                        className="px-7 py-2.5 text-base"
+                                    >
+                                        Join Now
+                                    </Button>
+                                </ReferralLink>
+                            </>
+                        )}
+
                     </div>
 
                     {/* =========================================
-                        MOBILE MENU BUTTON - LARGER
+                        MOBILE MENU BUTTON
                     ========================================= */}
                     <Button
                         variant="ghost"
                         size="default"
-                        className="lg:hidden h-12 w-12"
+                        className="h-12 w-12 lg:hidden"
                         onClick={() => setIsOpen((prev) => !prev)}
                         aria-label={
                             isOpen
@@ -173,19 +204,22 @@ export default function NavBar() {
                 </div>
 
                 {/* =========================================
-                    MOBILE MENU - LARGER
+                    MOBILE MENU
                 ========================================= */}
                 <div
                     className={`
-                        overflow-hidden transition-all duration-300 lg:hidden
+                        overflow-hidden
+                        transition-all duration-300
+                        lg:hidden
                         ${isOpen
-                            ? "max-h-[600px] opacity-100"
+                            ? "max-h-[700px] opacity-100"
                             : "max-h-0 opacity-0"
                         }
                     `}
                 >
                     <div className="border-t border-border py-6">
-                        {/* Mobile navigation - LARGER */}
+
+                        {/* Navigation */}
                         <div className="flex flex-col gap-1.5">
                             {navItems.map((item, index) => (
                                 <a
@@ -193,7 +227,10 @@ export default function NavBar() {
                                     href={item.href}
                                     onClick={closeMenu}
                                     className={`
-                                        rounded-lg px-5 py-4 text-base font-medium transition-colors
+                                        rounded-lg
+                                        px-5 py-4
+                                        text-base font-medium
+                                        transition-colors
                                         ${index === 0
                                             ? "bg-primary/10 text-primary"
                                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -205,30 +242,50 @@ export default function NavBar() {
                             ))}
                         </div>
 
-                        {/* Mobile auth buttons - LARGER */}
+                        {/* =====================================
+                            MOBILE AUTH ACTIONS
+                        ===================================== */}
                         <div className="mt-6 flex flex-col gap-3 border-t border-border pt-6">
-                            <Link
-                                to="/login"
-                                onClick={closeMenu}
-                                className="w-full"
-                            >
-                                <Button
-                                    variant="outline"
-                                    className="w-full h-12 text-base"
-                                >
-                                    Sign In
-                                </Button>
-                            </Link>
 
-                            <ReferralLink
-                                to="/signup"
-                                onClick={closeMenu}
-                                className="w-full"
-                            >
-                                <Button className="w-full h-12 text-base">
-                                    Join Now
-                                </Button>
-                            </ReferralLink>
+                            {isAuthenticated ? (
+                                /* AUTHENTICATED */
+                                <ReferralLink
+                                    to="/dashboard"
+                                    onClick={closeMenu}
+                                    className="w-full"
+                                >
+                                    <Button className="h-12 w-full text-base">
+                                        Dashboard
+                                    </Button>
+                                </ReferralLink>
+                            ) : (
+                                /* NOT AUTHENTICATED */
+                                <>
+                                    <Link
+                                        to="/login"
+                                        onClick={closeMenu}
+                                        className="w-full"
+                                    >
+                                        <Button
+                                            variant="outline"
+                                            className="h-12 w-full text-base"
+                                        >
+                                            Sign In
+                                        </Button>
+                                    </Link>
+
+                                    <ReferralLink
+                                        to="/signup"
+                                        onClick={closeMenu}
+                                        className="w-full"
+                                    >
+                                        <Button className="h-12 w-full text-base">
+                                            Join Now
+                                        </Button>
+                                    </ReferralLink>
+                                </>
+                            )}
+
                         </div>
                     </div>
                 </div>
@@ -236,3 +293,4 @@ export default function NavBar() {
         </header>
     );
 }
+

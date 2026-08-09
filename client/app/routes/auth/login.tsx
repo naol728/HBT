@@ -1,67 +1,170 @@
+
 import ReferralLink from "@/components/ReferralLink";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+import { useMutation } from "@tanstack/react-query";
+import { Eye, EyeOff, Lock, Phone } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
+
+import { signIn } from "@/api/auth";
+import { withReferral } from "@/components/withReferral";
+import { useAppDispatch } from "@/store/hook";
+import { loginSuccess } from "@/store/slices/authSlice";
 
 export default function Login() {
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
+
     const [showPassword, setShowPassword] = useState(false);
+    const [phone, setPhone] = useState("");
+    const [password, setPassword] = useState("");
+    const [remember, setRemember] = useState(false);
+    const dispatch = useAppDispatch()
+    const loginMutation = useMutation({
+        mutationFn: signIn,
+
+        onSuccess: (response) => {
+            if (typeof window !== "undefined") {
+                localStorage.setItem("token", response.token);
+                localStorage.setItem("user", JSON.stringify(response.data));
+            }
+
+            dispatch(
+                loginSuccess({
+                    token: response.token,
+                    user: response.data,
+                })
+            );
+
+            toast.success("Login successful!", {
+                description: "Welcome back to your dashboard.",
+            });
+
+            /*
+             * If your backend returns a token, store it here.
+             *
+             * Example:
+             * localStorage.setItem("token", response.token);
+             */
+
+            if (remember) {
+                localStorage.setItem("rememberLogin", "true");
+            } else {
+                localStorage.removeItem("rememberLogin");
+            }
+
+            navigate(withReferral("/dashboard"));
+        },
+
+        onError: (error: any) => {
+            console.error("Login error:", error);
+
+            const message =
+                error?.response?.data?.message ||
+                error?.message ||
+                "Invalid phone number or password.";
+
+            toast.error("Login failed", {
+                description: message,
+            });
+        },
+    });
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setLoading(true);
 
-        setTimeout(() => {
-            alert("Login successful!");
-            navigate("/dashboard");
-        }, 1000);
+        const trimmedPhone = phone.trim();
+
+        if (!trimmedPhone) {
+            toast.error("Phone number is required");
+            return;
+        }
+
+        if (!/^[0-9]{9}$/.test(trimmedPhone)) {
+            toast.error("Phone number must be 9 digits, e.g. 987654321");
+            return;
+        }
+
+        if (!password.trim()) {
+            toast.error("Password is required");
+            return;
+        }
+
+        loginMutation.mutate({
+            phone: trimmedPhone,
+            password,
+        });
     };
 
     return (
-        <div className="min-h-screen flex overflow-hidden">
-            {/* LEFT PANEL */}
-            <div className="flex-1 relative flex flex-col justify-end p-14 min-h-screen">
-                <div className="absolute inset-0 z-0 bg-[url('/logo.jpg')] bg-cover bg-center">
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent" />
+        <div className="min-h-screen flex overflow-hidden bg-background">
+            {/* =====================================================
+                LEFT PANEL
+            ====================================================== */}
+
+            <div className="relative hidden min-h-screen flex-1 flex-col justify-end overflow-hidden p-8 md:flex lg:p-14">
+                {/* Background */}
+                <div className="absolute inset-0">
+                    <img
+                        src="/logo.jpg"
+                        alt=""
+                        className="h-full w-full object-cover"
+                    />
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+
+                    <div className="absolute inset-0 bg-background/20" />
                 </div>
 
+                {/* Content */}
                 <div className="relative z-10 max-w-lg">
-                    <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+                    <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                         Powered by TalentBridge Ethiopia
                     </span>
 
-                    <h2 className="text-3xl font-bold mt-2 text-foreground">
-                        Your Team is <span className="text-primary">Growing</span> Without You
+                    <h2 className="mt-2 text-3xl font-bold text-foreground lg:text-4xl">
+                        Your Team is{" "}
+                        <span className="text-primary">Growing</span>{" "}
+                        Without You
                     </h2>
 
-                    <p className="text-muted-foreground text-sm mt-3 leading-relaxed">
-                        Sign in to check your commissions, track your team's sales, and
-                        collect your earnings — all from one place.
+                    <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                        Sign in to check your commissions, track your team's
+                        sales, and collect your earnings — all from one place.
                     </p>
 
-                    <div className="flex gap-8 mt-10 pt-8 border-t border-border/50">
+                    {/* Statistics */}
+                    <div className="mt-10 grid grid-cols-3 gap-4 border-t border-border/50 pt-8 sm:flex sm:gap-8">
                         <div>
-                            <div className="text-2xl font-bold text-primary">3,200+</div>
-                            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                            <div className="text-xl font-bold text-primary sm:text-2xl">
+                                3,200+
+                            </div>
+
+                            <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground sm:text-xs">
                                 Active Distributors
                             </div>
                         </div>
 
                         <div>
-                            <div className="text-2xl font-bold text-primary">Birr 2M+</div>
-                            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                            <div className="text-xl font-bold text-primary sm:text-2xl">
+                                Birr 2M+
+                            </div>
+
+                            <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground sm:text-xs">
                                 Commissions Paid
                             </div>
                         </div>
 
                         <div>
-                            <div className="text-2xl font-bold text-primary">98%</div>
-                            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                            <div className="text-xl font-bold text-primary sm:text-2xl">
+                                98%
+                            </div>
+
+                            <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground sm:text-xs">
                                 Payout Rate
                             </div>
                         </div>
@@ -69,114 +172,183 @@ export default function Login() {
                 </div>
             </div>
 
-            {/* RIGHT PANEL */}
-            <div className="w-[480px] min-h-screen bg-card flex flex-col justify-center p-14 overflow-y-auto">
-                <ReferralLink to="/" className="flex items-center gap-2.5 mb-10">
+            {/* =====================================================
+                RIGHT PANEL
+            ====================================================== */}
+
+            <div className="flex min-h-screen w-full flex-col justify-center overflow-y-auto bg-card p-6 sm:p-10 md:w-[480px] md:p-12 lg:p-14">
+                {/* Logo */}
+                <ReferralLink
+                    to="/"
+                    className="mb-8 flex items-center gap-2.5 sm:mb-10"
+                >
                     <img
                         src="/logo.jpg"
                         alt="TalentBridge Ethiopia"
-                        className="h-[38px] w-auto rounded"
+                        className="h-[38px] w-auto rounded object-contain"
                     />
+
                     <div className="text-base font-bold text-foreground">
-                        HBT<span className="text-primary"> · TalentBridge</span>
+                        HBT
+                        <span className="text-primary">
+                            {" "}
+                            · TalentBridge
+                        </span>
                     </div>
                 </ReferralLink>
 
-                <h2 className="text-2xl font-bold mb-1.5 text-foreground">Sign In</h2>
-                <p className="text-sm text-muted-foreground mb-8">
-                    Access your dashboard
-                </p>
+                {/* Header */}
+                <div>
+                    <h2 className="mb-1.5 text-2xl font-bold text-foreground">
+                        Sign In
+                    </h2>
+
+                    <p className="mb-8 text-sm text-muted-foreground">
+                        Access your dashboard
+                    </p>
+                </div>
+
+                {/* =================================================
+                    FORM
+                ================================================== */}
 
                 <form onSubmit={handleSubmit} noValidate>
-                    <div className="mb-4">
-                        <Label htmlFor="tel" className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-                            Phone
-                        </Label>
-                        <div className="relative mt-2">
-                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+
+                    <div className="space-y-2">
+                        <Label>Phone Number</Label>
+                        <div className="flex">
+                            <div className="inline-flex items-center px-3 py-2 rounded-l-md border border-r-0 border-border bg-muted/10 text-sm text-muted-foreground">
+                                <Phone className="h-4 w-4 mr-2" />
+                                +251
+                            </div>
                             <Input
-                                id="tel"
+                                id="phone"
                                 type="tel"
-                                placeholder="2519--------"
-                                required
-                                className="pl-10 bg-background/50 border-border text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-primary/20"
+                                value={phone}
+                                onChange={(e) => {
+                                    const rawValue = e.target.value;
+                                    const digitsOnly = rawValue.replace(/[^0-9]/g, "");
+                                    setPhone(digitsOnly.slice(0, 9));
+                                }}
+                                placeholder="987654321"
+                                autoComplete="tel"
+                                disabled={loginMutation.isPending}
+                                className="h-11 bg-background/50 pl-10 text-foreground placeholder:text-muted-foreground/60"
                             />
                         </div>
+                        <p className="text-xs text-muted-foreground">Enter your 9-digit phone number without the country code, e.g. 987654321.</p>
                     </div>
 
-                    <div className="mb-4">
-                        <Label htmlFor="password" className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                    {/* Password */}
+                    <div className="mb-5">
+                        <Label
+                            htmlFor="password"
+                            className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                        >
                             Password
                         </Label>
+
                         <div className="relative mt-2">
-                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+                            <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
+
                             <Input
                                 id="password"
-                                type={showPassword ? "text" : "password"}
+                                type={
+                                    showPassword
+                                        ? "text"
+                                        : "password"
+                                }
+                                value={password}
+                                onChange={(e) =>
+                                    setPassword(e.target.value)
+                                }
                                 placeholder="Enter your password"
-                                required
-                                className="pl-10 pr-11 bg-background/50 border-border text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:ring-primary/20"
+                                autoComplete="current-password"
+                                disabled={loginMutation.isPending}
+                                className="h-11 bg-background/50 pl-10 pr-11 text-foreground placeholder:text-muted-foreground/60"
                             />
+
                             <button
                                 type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                                onClick={() =>
+                                    setShowPassword(
+                                        !showPassword
+                                    )
+                                }
+                                disabled={loginMutation.isPending}
+                                aria-label={
+                                    showPassword
+                                        ? "Hide password"
+                                        : "Show password"
+                                }
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 transition-colors hover:text-muted-foreground disabled:pointer-events-none disabled:opacity-50"
                             >
-                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                {showPassword ? (
+                                    <EyeOff className="h-4 w-4" />
+                                ) : (
+                                    <Eye className="h-4 w-4" />
+                                )}
                             </button>
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between mb-6">
+                    {/* Remember + Forgot */}
+                    <div className="mb-6 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-2.5">
                             <Checkbox
                                 id="remember"
-                                className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                checked={remember}
+                                onCheckedChange={(checked) =>
+                                    setRemember(checked === true)
+                                }
+                                disabled={
+                                    loginMutation.isPending
+                                }
                             />
-                            <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
+
+                            <Label
+                                htmlFor="remember"
+                                className="cursor-pointer text-sm text-muted-foreground"
+                            >
                                 Remember me
                             </Label>
                         </div>
 
-                        <Link
-                            to="/forgot-password"
-                            className="text-sm text-primary hover:text-primary/80 transition-colors"
-                        >
-                            Forgot password?
-                        </Link>
+
                     </div>
 
+                    {/* Submit */}
                     <Button
                         type="submit"
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-11"
-                        disabled={loading}
+                        disabled={loginMutation.isPending}
+                        className="h-11 w-full"
                     >
-                        {loading ? "Signing in..." : "Sign In to Dashboard"}
+                        {loginMutation.isPending
+                            ? "Signing in..."
+                            : "Sign In to Dashboard"}
                     </Button>
                 </form>
 
-                <div className="text-center mt-6 text-sm text-muted-foreground">
+                {/* Register */}
+                <div className="mt-6 text-center text-sm text-muted-foreground">
                     Don't have an account?{" "}
-                    <ReferralLink to="/signup" className="text-primary font-semibold hover:text-primary/80">
+                    <ReferralLink
+                        to="/signup"
+                        className="font-semibold text-primary transition-colors hover:text-primary/80"
+                    >
                         Join for free
                     </ReferralLink>
                 </div>
 
-                <p className="text-xs text-muted-foreground/70 mt-8 leading-relaxed text-center">
-                    By signing in you agree to our{" "}
-                    <Link to="/terms" className="text-primary hover:text-primary/80">
-                        Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link to="/privacy" className="text-primary hover:text-primary/80">
-                        Privacy Policy
-                    </Link>
-                    .
-                </p>
+                {/* Terms */}
 
-                <p className="text-[0.65rem] text-muted-foreground/50 mt-4 text-center">
+
+                {/* Footer */}
+                <p className="mt-4 text-center text-[0.65rem] text-muted-foreground/50">
                     HBT — Hustlers Business Team · Powered by{" "}
-                    <strong className="text-primary">TalentBridge Ethiopia</strong>
+                    <strong className="text-primary">
+                        TalentBridge Ethiopia
+                    </strong>
                 </p>
             </div>
         </div>

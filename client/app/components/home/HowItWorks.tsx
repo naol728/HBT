@@ -11,6 +11,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import ReferralLink from '../ReferralLink';
+import { useAppSelector } from '@/store/hook';
 
 const steps = [
   {
@@ -52,6 +54,10 @@ const steps = [
 ];
 
 export default function HowItWorks() {
+  const { isAuthenticated } = useAppSelector(
+    (state) => state.auth
+  );
+
   return (
     <section className="py-20 relative overflow-hidden" id="how">
       {/* Background */}
@@ -153,20 +159,24 @@ export default function HowItWorks() {
             <span className="text-sm font-medium text-primary">Start your journey today</span>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="group px-8 py-6 h-auto text-base shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300 rounded-full"
-            >
-              Get Started Now
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="px-8 py-6 h-auto text-base border-2 rounded-full"
-            >
-              Learn More
-            </Button>
+            <ReferralLink to={isAuthenticated ? "/dashboard" : "/signup"}>
+              <Button
+                size="lg"
+                className="group text-base px-8 py-6 h-auto shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300"
+              >
+                Start Your Journey
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </ReferralLink>
+            <ReferralLink to={isAuthenticated ? "/dashboard" : "/signup"}>
+              <Button
+                size="lg"
+                className="group text-base px-8 py-6 h-auto shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300"
+              >
+                Start Your Journey
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </ReferralLink>
           </div>
         </div>
       </div>

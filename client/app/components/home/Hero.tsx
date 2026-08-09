@@ -4,9 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import ReferralLink from '../ReferralLink';
+import { useAppSelector } from '@/store/hook';
 
 export default function Hero() {
   const statRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const { isAuthenticated } = useAppSelector(
+    (state) => state.auth
+  );
 
   // Simple counter animation for stats
   useEffect(() => {
@@ -118,7 +122,7 @@ export default function Hero() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <ReferralLink to="/signup">
+            <ReferralLink to={isAuthenticated ? "/dashboard" : "/signup"}>
               <Button
                 size="lg"
                 className="group text-base px-8 py-6 h-auto shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300"
