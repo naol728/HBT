@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from "react-router";
 import { useAppSelector } from "@/store/hook";
 import Loading from "./Loading";
-import ReferralNavLink from "./ReferralNavLink";
+import ReferralNavigate from "./ReferralNavigate";
 
 type Props = {
     children?: React.ReactNode;
@@ -31,11 +31,11 @@ export default function ProtectedRoute({
     if (loading) return <Loading />;
 
     if (!isAuthenticated) {
-        return <ReferralNavLink to="/login" replace />;
+        return <ReferralNavigate to="/login" replace />;
     }
 
     if (types && !types.includes(user?.role)) {
-        return <ReferralNavLink to="/" replace />;
+        return <ReferralNavigate to="/" replace />;
     }
 
     return children ?? <Outlet />;

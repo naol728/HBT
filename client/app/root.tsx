@@ -10,16 +10,12 @@ import { Toaster } from 'sonner'
 import type { Route } from "./+types/root";
 import { TooltipProvider } from "@/components/ui/tooltip"
 import "./app.css";
-// import "./index.css";
 import { Provider } from "react-redux";
 import { store } from "./store/store";
-import { useLoaderData } from "react-router";
-import { useEffect } from "react";
 import ReferralHandler from "./ReferralHandler";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/query-client";
-import { useAppDispatch } from "./store/hook";
-import { getMe } from "./store/slices/authSlice";
+
 import AuthInitializer from "@/components/AuthInitializer";
 
 export async function loader({ request }: Route.LoaderArgs) {
