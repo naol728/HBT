@@ -52,15 +52,19 @@ export const signUp = async (req: Request, res: Response) => {
   try {
     const { phone, firstName, lastName, password, region, referby } = req.body;
 
-    // Validate required fields
+    // ==========================================
+    // 1. Validate required fields
+    // ==========================================
     if (!phone || !firstName || !lastName || !password || !region || !referby) {
       return res.status(400).json({
         status: false,
-        message: "All required fields are required.",
+        message: "All fields are required, including referral code.",
       });
     }
 
-    // Check if phone already exists
+    // ==========================================
+    // 2. Check if phone already exists
+    // ==========================================
     const { data: existingUser, error: existingUserError } = await supabase
       .from("users")
       .select("id")
@@ -68,6 +72,8 @@ export const signUp = async (req: Request, res: Response) => {
       .maybeSingle();
 
     if (existingUserError) {
+      console.error("Existing user check error:", existingUserError);
+
       return res.status(500).json({
         status: false,
         message: "Failed to check existing user.",
@@ -81,38 +87,74 @@ export const signUp = async (req: Request, res: Response) => {
       });
     }
 
-    // Hash password
-    const password_hash = await bcrypt.hash(password, 12);
+    // ==========================================
+    // 3. Find and validate referral code
+    // ==========================================
+    const { data: referrer, error: referralError } = await supabase
+      .from("users")
+      .select("id, referral_code")
+      .eq("referral_code", referby.trim())
+      .maybeSingle();
 
-    // Find referrer (optional)
-    let referredBy: string | null = null;
+    if (referralError) {
+      console.error("Referral validation error:", referralError);
 
-    if (referby) {
-      const { data: referrer, error: referralError } = await supabase
-        .from("users")
-        .select("id")
-        .eq("referral_code", referby)
-        .maybeSingle();
-
-      if (referralError) {
-        return res.status(500).json({
-          status: false,
-          message: "Failed to validate referral code.",
-        });
-      }
-
-      if (!referrer) {
-        return res.status(400).json({
-          status: false,
-          message: "Invalid referral code.",
-        });
-      }
-
-      referredBy = referrer.id;
+      return res.status(500).json({
+        status: false,
+        message: "Failed to validate referral code.",
+      });
     }
 
-    // Create user
-    const { data: user, error } = await supabase
+    // Referral code does not exist
+    if (!referrer) {
+      return res.status(400).json({
+        status: false,
+        message: "Invalid referral code.",
+      });
+    }
+
+    const referredBy = referrer.id;
+
+    // ==========================================
+    // 4. Count users already registered
+    //    using this referral
+    // ==========================================
+    const { count: referralCount, error: countError } = await supabase
+      .from("users")
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
+      .eq("referred_by", referredBy);
+
+    if (countError) {
+      console.error("Referral count error:", countError);
+
+      return res.status(500).json({
+        status: false,
+        message: "Failed to check referral limit.",
+      });
+    }
+
+    // ==========================================
+    // 5. Maximum 4 users per referral code
+    // ==========================================
+    if ((referralCount ?? 0) >= 4) {
+      return res.status(400).json({
+        status: false,
+        message: "This referral code has already been used by 4 users.",
+      });
+    }
+
+    // ==========================================
+    // 6. Hash password
+    // ==========================================
+    const password_hash = await bcrypt.hash(password, 12);
+
+    // ==========================================
+    // 7. Create user
+    // ==========================================
+    const { data: user, error: userError } = await supabase
       .from("users")
       .insert({
         phone,
@@ -120,13 +162,15 @@ export const signUp = async (req: Request, res: Response) => {
         last_name: lastName,
         region,
         password_hash,
+
+        // Store the referrer's user ID
         referred_by: referredBy,
       })
       .select("*")
       .single();
 
-    if (error) {
-      console.error(error);
+    if (userError) {
+      console.error("Create user error:", userError);
 
       return res.status(500).json({
         status: false,
@@ -134,15 +178,28 @@ export const signUp = async (req: Request, res: Response) => {
       });
     }
 
-    // Reward the referrer (optional)
-    if (referredBy) {
-      await supabase.rpc("reward_referrer", {
-        referrer_id: referredBy,
-      });
+    // ==========================================
+    // 8. Reward referrer
+    // ==========================================
+    const { error: rewardError } = await supabase.rpc("reward_referrer", {
+      referrer_id: referredBy,
+    });
+
+    if (rewardError) {
+      console.error("Reward referrer error:", rewardError);
+
+      // User was already created, so don't fail signup.
+      // You can retry the reward separately.
     }
 
+    // ==========================================
+    // 9. Generate JWT
+    // ==========================================
     const token = generateToken(user.id);
 
+    // ==========================================
+    // 10. Response
+    // ==========================================
     return res.status(201).json({
       status: true,
       message: "Account created successfully.",
