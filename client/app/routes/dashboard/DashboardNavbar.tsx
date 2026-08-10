@@ -10,6 +10,7 @@ import {
     AvatarFallback,
 } from "@/components/ui/avatar";
 import { useAppSelector } from "@/store/hook";
+import ReferralLink from "@/components/ReferralLink";
 
 interface DashboardNavbarProps {
     onOpenSidebar: () => void;
@@ -68,14 +69,7 @@ export default function DashboardNavbar({
                 {/* Right */}
                 <div className="flex items-center gap-1 sm:gap-2">
 
-                    {/* Search */}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="hidden sm:flex"
-                    >
-                        <Search className="h-5 w-5" />
-                    </Button>
+
 
                     {/* Notifications */}
                     <Button
@@ -89,11 +83,14 @@ export default function DashboardNavbar({
                     </Button>
 
                     {/* User */}
-                    <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
-                        <AvatarFallback className="text-xs font-semibold">
-                            NM
-                        </AvatarFallback>
-                    </Avatar>
+                    <ReferralLink to="/dashboard/profile">
+                        <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
+                            <AvatarFallback className="text-xs font-semibold">
+                                NM
+                            </AvatarFallback>
+                        </Avatar>
+                    </ReferralLink>
+
 
                 </div>
 

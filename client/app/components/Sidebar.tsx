@@ -17,6 +17,9 @@ import { cn } from "@/lib/utils";
 
 import { NavLink } from "react-router";
 import ReferralNavLink from "./ReferralNavLink";
+import { useAppDispatch, useAppSelector } from "@/store/hook";
+import { Button } from '@/components/ui/button';
+import { logout } from "@/store/slices/authSlice";
 
 const sections = [
     {
@@ -95,6 +98,10 @@ export default function Sidebar({
     open,
     onClose,
 }: SidebarProps) {
+    const { loading, isAuthenticated, user } = useAppSelector(
+        (state) => state.auth
+    );
+    const dispatch = useAppDispatch()
     return (
         <>
             {/* Mobile Overlay */}
@@ -221,17 +228,18 @@ export default function Sidebar({
 
                         <div className="flex-1">
                             <p className="text-sm font-semibold">
-                                Naol Meseret
+                                {user?.first_name + user?.last_name}
                             </p>
 
                             <p className="text-xs text-muted-foreground">
-                                Hustler
+                                {user?.level}
                             </p>
                         </div>
                     </ReferralNavLink>
 
-                    <NavLink
-                        to="/logout"
+                    <Button
+                        onClick={() => dispatch(logout())}
+                        variant={"destructive"}
                         className="
             mt-3
             flex
@@ -242,14 +250,14 @@ export default function Sidebar({
             py-2.5
             text-sm
             text-destructive
-            transition-colors
-            hover:bg-destructive/10
+          w-full
+        
           "
                     >
                         <LogOut className="h-4 w-4" />
 
                         Sign Out
-                    </NavLink>
+                    </Button>
 
                     <p className="mt-5 text-center text-[10px] text-muted-foreground">
                         Powered by{" "}
