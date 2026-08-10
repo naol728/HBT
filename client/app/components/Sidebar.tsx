@@ -228,7 +228,7 @@ export default function Sidebar({
 
                         <div className="flex-1">
                             <p className="text-sm font-semibold">
-                                {user?.first_name + user?.last_name}
+                                {user?.first_name.toUpperCase() + " " + user?.last_name}
                             </p>
 
                             <p className="text-xs text-muted-foreground">

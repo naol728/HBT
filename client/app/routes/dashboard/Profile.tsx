@@ -2,10 +2,8 @@
 import { useRef, useState } from "react";
 import {
     Camera,
-    CheckCircle2,
     Copy,
     FileCheck2,
-    FileImage,
     IdCard,
     Loader2,
     MapPin,
@@ -15,6 +13,8 @@ import {
     UserRound,
     Users,
 } from "lucide-react";
+
+import { useMutation } from "@tanstack/react-query";
 
 import { useAppSelector } from "@/store/hook";
 
@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/card";
 
 import { Badge } from "@/components/ui/badge";
-
 import { Input } from "@/components/ui/input";
 
 import {
@@ -46,15 +45,22 @@ import {
 
 import { toast } from "sonner";
 
+import { submitkyc } from "@/api/auth";
+
+
 type KycFileType = "identity" | "selfie";
+
 
 export default function Profile() {
     const { user, loading } = useAppSelector(
         (state) => state.auth
     );
 
-    const identityInputRef = useRef<HTMLInputElement>(null);
-    const selfieInputRef = useRef<HTMLInputElement>(null);
+    const identityInputRef =
+        useRef<HTMLInputElement>(null);
+
+    const selfieInputRef =
+        useRef<HTMLInputElement>(null);
 
     const [identityFile, setIdentityFile] =
         useState<File | null>(null);
@@ -62,8 +68,86 @@ export default function Profile() {
     const [selfieFile, setSelfieFile] =
         useState<File | null>(null);
 
-    const [uploading, setUploading] =
-        useState<KycFileType | null>(null);
+
+    /*
+     * ============================================================
+     * KYC MUTATION
+     * ============================================================
+     */
+
+    const kycMutation = useMutation({
+        mutationFn: async () => {
+            if (!identityFile) {
+                throw new Error(
+                    "Please select your identity document."
+                );
+            }
+
+            if (!selfieFile) {
+                throw new Error(
+                    "Please select your selfie."
+                );
+            }
+
+            const formData = new FormData();
+
+            formData.append(
+                "identity_document",
+                identityFile
+            );
+
+            formData.append(
+                "selfie",
+                selfieFile
+            );
+
+            return submitkyc(formData);
+        },
+
+        onSuccess: () => {
+            toast.success(
+                "KYC documents submitted successfully.",
+                {
+                    description:
+                        "Your documents are now pending verification.",
+                }
+            );
+
+            setIdentityFile(null);
+            setSelfieFile(null);
+
+            if (identityInputRef.current) {
+                identityInputRef.current.value = "";
+            }
+
+            if (selfieInputRef.current) {
+                selfieInputRef.current.value = "";
+            }
+        },
+
+        onError: (error: any) => {
+            console.error(
+                "KYC submission error:",
+                error
+            );
+
+            toast.error(
+                "KYC submission failed.",
+                {
+                    description:
+                        error?.message ||
+                        "Unable to submit your documents. Please try again.",
+                }
+            );
+        },
+    });
+
+
+    /*
+     * ============================================================
+     * LOADING STATE
+     * ============================================================
+     */
 
     if (loading) {
         return (
@@ -72,6 +156,13 @@ export default function Profile() {
             </div>
         );
     }
+
+
+    /*
+     * ============================================================
+     * USER NOT AVAILABLE
+     * ============================================================
+     */
 
     if (!user) {
         return (
@@ -93,12 +184,19 @@ export default function Profile() {
         );
     }
 
+
+    /*
+     * ============================================================
+     * USER DATA
+     * ============================================================
+     */
+
     const fullName =
         `${user.first_name} ${user.last_name} `.trim();
 
     const initials =
-        `${user.first_name?.charAt(0) ?? ""}${user.last_name?.charAt(0) ?? ""} `
-            .toUpperCase();
+        `${user.first_name?.charAt(0) ?? ""}${user.last_name?.charAt(0) ?? ""
+            } `.toUpperCase();
 
     const levelLabel =
         user.level.charAt(0).toUpperCase() +
@@ -108,25 +206,53 @@ export default function Profile() {
         user.role.charAt(0).toUpperCase() +
         user.role.slice(1);
 
+
+    /*
+     * ============================================================
+     * REFERRAL
+     * ============================================================
+     */
+
+    const referralUrl =
+        `https://hbt-chi.vercel.app/?ref=${user.referral_code}`;
+
+
     const copyReferralCode = async () => {
         try {
             await navigator.clipboard.writeText(
-                "https://hbt-chi.vercel.app/?ref=" + user.referral_code
+                referralUrl
             );
 
-            toast.success("Referral code copied!");
+            toast.success(
+                "Referral link copied!"
+            );
         } catch {
-            toast.error("Unable to copy referral code.");
+            toast.error(
+                "Unable to copy referral link."
+            );
         }
     };
+
+
+    /*
+     * ============================================================
+     * FILE SELECT
+     * ============================================================
+     */
 
     const handleFileSelect = (
         event: React.ChangeEvent<HTMLInputElement>,
         type: KycFileType
     ) => {
-        const file = event.target.files?.[0];
+        const file =
+            event.target.files?.[0];
 
         if (!file) return;
+
+
+        /*
+         * Allowed file types
+         */
 
         const allowedTypes = [
             "image/jpeg",
@@ -135,31 +261,54 @@ export default function Profile() {
             "application/pdf",
         ];
 
+
         if (!allowedTypes.includes(file.type)) {
             toast.error(
-                "Please upload a JPG, PNG, WEBP, or PDF file."
+                "Invalid file type.",
+                {
+                    description:
+                        "Please upload JPG, PNG, WEBP, or PDF.",
+                }
             );
 
             event.target.value = "";
+
             return;
         }
 
-        const maxSize = 5 * 1024 * 1024;
+
+        /*
+         * Maximum 5MB
+         */
+
+        const maxSize =
+            5 * 1024 * 1024;
 
         if (file.size > maxSize) {
             toast.error(
-                "File size must be less than 5MB."
+                "File is too large.",
+                {
+                    description:
+                        "Maximum file size is 5MB.",
+                }
             );
 
             event.target.value = "";
+
             return;
         }
+
+
+        /*
+         * Store file
+         */
 
         if (type === "identity") {
             setIdentityFile(file);
         } else {
             setSelfieFile(file);
         }
+
 
         toast.success(
             type === "identity"
@@ -168,74 +317,49 @@ export default function Profile() {
         );
     };
 
-    const uploadKycDocument = async (
-        type: KycFileType
-    ) => {
-        const file =
-            type === "identity"
-                ? identityFile
-                : selfieFile;
 
-        if (!file) {
+    /*
+     * ============================================================
+     * SUBMIT KYC
+     * ============================================================
+     */
+
+    const handleSubmitKyc = () => {
+        if (!identityFile) {
             toast.error(
-                type === "identity"
-                    ? "Please select your identity document."
-                    : "Please select your selfie."
+                "Identity document required.",
+                {
+                    description:
+                        "Please select your ID card, national ID, or passport.",
+                }
             );
 
             return;
         }
 
-        try {
-            setUploading(type);
-
-            /*
-             * TODO:
-             *
-             * Connect this to your backend KYC endpoint.
-             *
-             * Example:
-             *
-             * const formData = new FormData();
-             * formData.append("document", file);
-             * formData.append("type", type);
-             *
-             * await apiClient.post(
-             *     "/kyc/upload",
-             *     formData,
-             *     {
-             *         headers: {
-             *             "Content-Type":
-             *                 "multipart/form-data",
-             *         },
-             *     }
-             * );
-             */
-
-            await new Promise((resolve) =>
-                setTimeout(resolve, 1200)
-            );
-
-            toast.success(
-                type === "identity"
-                    ? "Identity document uploaded successfully."
-                    : "Selfie uploaded successfully."
-            );
-        } catch {
+        if (!selfieFile) {
             toast.error(
-                "Upload failed. Please try again."
+                "Selfie required.",
+                {
+                    description:
+                        "Please select a selfie holding your identity document.",
+                }
             );
-        } finally {
-            setUploading(null);
+
+            return;
         }
+
+        kycMutation.mutate();
     };
+
 
     return (
         <div className="mx-auto w-full max-w-7xl space-y-6">
 
             {/* =====================================================
-                PAGE HEADER
-            ===================================================== */}
+          PAGE HEADER
+      ===================================================== */}
+
             <div>
                 <h1 className="text-2xl font-bold tracking-tight">
                     My Profile
@@ -247,25 +371,29 @@ export default function Profile() {
                 </p>
             </div>
 
+
             {/* =====================================================
-                PROFILE + PERSONAL INFORMATION
-            ===================================================== */}
+          PROFILE + PERSONAL INFORMATION
+      ===================================================== */}
+
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
 
                 {/* PROFILE CARD */}
+
                 <Card className="overflow-hidden">
 
-                    {/* Banner */}
                     <div className="h-28 bg-gradient-to-r from-primary/30 via-primary/10 to-background" />
 
                     <CardContent className="relative px-6 pb-6">
 
-                        {/* Avatar */}
                         <div className="-mt-12 mb-5 flex items-end justify-between">
+
                             <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+
                                 <AvatarFallback className="bg-primary/10 text-2xl font-bold text-primary">
                                     {initials}
                                 </AvatarFallback>
+
                             </Avatar>
 
                             <Badge
@@ -273,13 +401,17 @@ export default function Profile() {
                                 className="mb-2 gap-1.5 capitalize"
                             >
                                 <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+
                                 {levelLabel}
                             </Badge>
+
                         </div>
 
-                        {/* Name */}
+
                         <div>
+
                             <div className="flex flex-wrap items-center gap-2">
+
                                 <h2 className="text-xl font-bold">
                                     {fullName}
                                 </h2>
@@ -290,27 +422,35 @@ export default function Profile() {
                                 >
                                     {roleLabel}
                                 </Badge>
+
                             </div>
+
 
                             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
 
                                 <span className="flex items-center gap-1.5">
                                     <Phone className="h-3.5 w-3.5" />
+
                                     {user.phone}
                                 </span>
 
                                 <span className="flex items-center gap-1.5">
                                     <MapPin className="h-3.5 w-3.5" />
+
                                     {user.region}
                                 </span>
 
                             </div>
+
                         </div>
 
+
                         {/* Stats */}
+
                         <div className="my-6 grid grid-cols-2 divide-x rounded-lg border bg-muted/30 sm:grid-cols-3">
 
                             <div className="p-4 text-center">
+
                                 <div className="text-2xl font-bold text-primary">
                                     {user.total_referrals}
                                 </div>
@@ -318,9 +458,12 @@ export default function Profile() {
                                 <div className="mt-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                                     Referrals
                                 </div>
+
                             </div>
 
+
                             <div className="p-4 text-center">
+
                                 <div className="text-2xl font-bold">
                                     {levelLabel}
                                 </div>
@@ -328,33 +471,45 @@ export default function Profile() {
                                 <div className="mt-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                                     Current Level
                                 </div>
+
                             </div>
 
+
                             <div className="col-span-2 border-t p-4 text-center sm:col-span-1 sm:border-t-0">
+
                                 <div className="flex items-center justify-center gap-1.5 text-2xl font-bold">
+
                                     <Users className="h-5 w-5 text-primary" />
+
                                     {user.total_referrals}
+
                                 </div>
 
                                 <div className="mt-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                                     Team Members
                                 </div>
+
                             </div>
 
                         </div>
 
+
                         {/* Referral */}
+
                         <div className="rounded-lg border bg-muted/30 p-4">
 
                             <div className="mb-2 flex items-center justify-between">
+
                                 <div>
+
                                     <p className="text-sm font-semibold">
-                                        Your Referral Code
+                                        Your Referral Link
                                     </p>
 
                                     <p className="text-xs text-muted-foreground">
-                                        Share this code to invite new distributors.
+                                        Share this link to invite new distributors.
                                     </p>
+
                                 </div>
 
                                 <Button
@@ -365,13 +520,16 @@ export default function Profile() {
                                 >
                                     <Copy className="h-4 w-4" />
                                 </Button>
+
                             </div>
 
+
                             <div className="flex items-center gap-2">
+
                                 <Input
-                                    value={"https://hbt-chi.vercel.app/?ref=" + user.referral_code}
+                                    value={referralUrl}
                                     readOnly
-                                    className="font-mono font-semibold"
+                                    className="font-mono text-xs font-semibold"
                                 />
 
                                 <Button
@@ -381,15 +539,21 @@ export default function Profile() {
                                 >
                                     Copy
                                 </Button>
+
                             </div>
 
                         </div>
+
                     </CardContent>
                 </Card>
 
+
                 {/* PERSONAL INFORMATION */}
+
                 <Card>
+
                     <CardHeader>
+
                         <CardTitle className="text-base">
                             Personal Information
                         </CardTitle>
@@ -397,13 +561,16 @@ export default function Profile() {
                         <CardDescription>
                             Your account information.
                         </CardDescription>
+
                     </CardHeader>
+
 
                     <CardContent className="space-y-5">
 
                         <div className="grid gap-4 sm:grid-cols-2">
 
                             <div className="space-y-2">
+
                                 <label className="text-sm font-medium">
                                     First Name
                                 </label>
@@ -412,9 +579,12 @@ export default function Profile() {
                                     value={user.first_name}
                                     readOnly
                                 />
+
                             </div>
 
+
                             <div className="space-y-2">
+
                                 <label className="text-sm font-medium">
                                     Last Name
                                 </label>
@@ -423,11 +593,14 @@ export default function Profile() {
                                     value={user.last_name}
                                     readOnly
                                 />
+
                             </div>
 
                         </div>
 
+
                         <div className="space-y-2">
+
                             <label className="text-sm font-medium">
                                 Phone
                             </label>
@@ -436,9 +609,12 @@ export default function Profile() {
                                 value={user.phone}
                                 readOnly
                             />
+
                         </div>
 
+
                         <div className="space-y-2">
+
                             <label className="text-sm font-medium">
                                 Region
                             </label>
@@ -447,21 +623,28 @@ export default function Profile() {
                                 value={user.region}
                                 disabled
                             >
+
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
 
                                 <SelectContent>
+
                                     <SelectItem value={user.region}>
                                         {user.region}
                                     </SelectItem>
+
                                 </SelectContent>
+
                             </Select>
+
                         </div>
+
 
                         <div className="grid gap-4 sm:grid-cols-2">
 
                             <div className="rounded-lg border bg-muted/30 p-4">
+
                                 <p className="text-xs text-muted-foreground">
                                     Account Role
                                 </p>
@@ -469,9 +652,12 @@ export default function Profile() {
                                 <p className="mt-1 font-semibold capitalize">
                                     {user.role}
                                 </p>
+
                             </div>
 
+
                             <div className="rounded-lg border bg-muted/30 p-4">
+
                                 <p className="text-xs text-muted-foreground">
                                     Distributor Level
                                 </p>
@@ -479,55 +665,68 @@ export default function Profile() {
                                 <p className="mt-1 font-semibold capitalize text-primary">
                                     {user.level}
                                 </p>
+
                             </div>
 
                         </div>
 
                     </CardContent>
+
                 </Card>
+
             </div>
 
+
             {/* =====================================================
-                KYC VERIFICATION
-            ===================================================== */}
+          KYC VERIFICATION
+      ===================================================== */}
+
             <Card>
 
                 <CardHeader>
+
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
                         <div>
+
                             <div className="flex items-center gap-2">
+
                                 <ShieldCheck className="h-5 w-5 text-primary" />
 
                                 <CardTitle className="text-base">
                                     Identity Verification
                                 </CardTitle>
+
                             </div>
 
                             <CardDescription className="mt-1">
                                 Verify your identity to unlock full
                                 account and withdrawal features.
                             </CardDescription>
+
                         </div>
+
 
                         <Badge
                             variant="secondary"
                             className="w-fit gap-1.5"
                         >
                             <span className="h-2 w-2 rounded-full bg-yellow-500" />
+
                             Verification Pending
                         </Badge>
 
                     </div>
+
                 </CardHeader>
+
 
                 <CardContent>
 
                     <div className="grid gap-4 md:grid-cols-2">
 
-                        {/* =================================================
-                            IDENTITY DOCUMENT
-                        ================================================= */}
+                        {/* IDENTITY */}
+
                         <KycUploadCard
                             title="Identity Card / Passport"
                             description="Upload your Kebele ID, national ID, or passport."
@@ -535,7 +734,7 @@ export default function Profile() {
                                 <IdCard className="h-7 w-7" />
                             }
                             file={identityFile}
-                            uploading={uploading === "identity"}
+                            uploading={kycMutation.isPending}
                             inputRef={identityInputRef}
                             onSelect={(event) =>
                                 handleFileSelect(
@@ -543,16 +742,11 @@ export default function Profile() {
                                     "identity"
                                 )
                             }
-                            onUpload={() =>
-                                uploadKycDocument(
-                                    "identity"
-                                )
-                            }
                         />
 
-                        {/* =================================================
-                            SELFIE
-                        ================================================= */}
+
+                        {/* SELFIE */}
+
                         <KycUploadCard
                             title="Selfie with ID"
                             description="Take a clear selfie while holding your identity document."
@@ -560,7 +754,7 @@ export default function Profile() {
                                 <Camera className="h-7 w-7" />
                             }
                             file={selfieFile}
-                            uploading={uploading === "selfie"}
+                            uploading={kycMutation.isPending}
                             inputRef={selfieInputRef}
                             onSelect={(event) =>
                                 handleFileSelect(
@@ -568,21 +762,54 @@ export default function Profile() {
                                     "selfie"
                                 )
                             }
-                            onUpload={() =>
-                                uploadKycDocument(
-                                    "selfie"
-                                )
-                            }
                         />
 
                     </div>
 
+
+                    {/* SUBMIT */}
+
+                    <div className="mt-6">
+
+                        <Button
+                            type="button"
+                            className="w-full"
+                            size="lg"
+                            disabled={
+                                !identityFile ||
+                                !selfieFile ||
+                                kycMutation.isPending
+                            }
+                            onClick={handleSubmitKyc}
+                        >
+
+                            {kycMutation.isPending ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+
+                                    Submitting KYC...
+                                </>
+                            ) : (
+                                <>
+                                    <ShieldCheck className="mr-2 h-4 w-4" />
+
+                                    Submit KYC Documents
+                                </>
+                            )}
+
+                        </Button>
+
+                    </div>
+
+
                     {/* Security Notice */}
+
                     <div className="mt-5 flex gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
 
                         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
 
                         <div>
+
                             <p className="text-sm font-medium">
                                 Your documents are secure
                             </p>
@@ -593,20 +820,25 @@ export default function Profile() {
                                 Accepted formats are JPG, PNG, WEBP,
                                 and PDF up to 5MB.
                             </p>
+
                         </div>
 
                     </div>
 
                 </CardContent>
+
             </Card>
 
         </div>
     );
 }
 
-/* ============================================================
-   KYC UPLOAD CARD
-============================================================ */
+
+/*
+ * ============================================================
+ * KYC UPLOAD CARD
+ * ============================================================
+ */
 
 interface KycUploadCardProps {
     title: string;
@@ -618,8 +850,8 @@ interface KycUploadCardProps {
     onSelect: (
         event: React.ChangeEvent<HTMLInputElement>
     ) => void;
-    onUpload: () => void;
 }
+
 
 function KycUploadCard({
     title,
@@ -629,10 +861,11 @@ function KycUploadCard({
     uploading,
     inputRef,
     onSelect,
-    onUpload,
 }: KycUploadCardProps) {
     return (
         <div className="rounded-xl border bg-card p-5">
+
+            {/* Header */}
 
             <div className="flex items-start gap-4">
 
@@ -654,20 +887,28 @@ function KycUploadCard({
 
             </div>
 
+
             {/* Hidden input */}
+
             <input
                 ref={inputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp,application/pdf"
                 onChange={onSelect}
+                disabled={uploading}
                 className="hidden"
             />
 
+
             {/* Upload Area */}
+
             <button
                 type="button"
-                onClick={() => inputRef.current?.click()}
-                className="mt-5 flex w-full flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 px-4 py-8 text-center transition-colors hover:border-primary/50 hover:bg-primary/5"
+                disabled={uploading}
+                onClick={() =>
+                    inputRef.current?.click()
+                }
+                className="mt-5 flex w-full flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 px-4 py-8 text-center transition-colors hover:border-primary/50 hover:bg-primary/5 disabled:pointer-events-none disabled:opacity-60"
             >
 
                 {file ? (
@@ -700,28 +941,7 @@ function KycUploadCard({
 
             </button>
 
-            {/* Upload button */}
-            {file && (
-                <Button
-                    type="button"
-                    onClick={onUpload}
-                    disabled={uploading}
-                    className="mt-3 w-full"
-                >
-                    {uploading ? (
-                        <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Uploading...
-                        </>
-                    ) : (
-                        <>
-                            <Upload className="mr-2 h-4 w-4" />
-                            Upload Document
-                        </>
-                    )}
-                </Button>
-            )}
-
         </div>
     );
 }
+
