@@ -9,7 +9,7 @@ export default function UserLayout() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
-        <ProtectedRoute types={["user"]}>
+        <ProtectedRoute types={["admin"]}>
             <div className="min-h-screen bg-background">
 
                 <Sidebar

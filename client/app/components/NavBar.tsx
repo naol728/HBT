@@ -33,7 +33,7 @@ export default function NavBar() {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
 
-    const { isAuthenticated } = useAppSelector(
+    const { isAuthenticated, user } = useAppSelector(
         (state) => state.auth
     );
 
@@ -146,14 +146,22 @@ export default function NavBar() {
 
                         {isAuthenticated ? (
                             /* AUTHENTICATED */
-                            <ReferralLink to="/dashboard">
+                            user?.role === "admin" ? <ReferralLink to="/admin">
                                 <Button
                                     size="default"
                                     className="px-7 py-2.5 text-base"
                                 >
-                                    Dashboard
+                                    Admin Dashboard
                                 </Button>
-                            </ReferralLink>
+                            </ReferralLink> :
+                                <ReferralLink to="/dashboard">
+                                    <Button
+                                        size="default"
+                                        className="px-7 py-2.5 text-base"
+                                    >
+                                        Dashboard
+                                    </Button>
+                                </ReferralLink>
                         ) : (
                             /* NOT AUTHENTICATED */
                             <>
